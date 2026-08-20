@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if [ "$2" != "POST-DEINSTALL" ]; then
+	exit 0
+fi
+
+# Stop all running daemons and clean runtime configuration
+/usr/local/bin/php -f /usr/local/pkg/cloudflared.inc deinstall 2>/dev/null || true
+
+# Unregister package from pfSense Web GUI
+/usr/local/bin/php -r 'require_once("config.inc"); require_once("pkg-utils.inc"); delete_package_xml("cloudflared"); write_config("Uninstalled cloudflared package");' 2>/dev/null || true
+
+# Clean up runtime directories and downloaded binary
+rm -rf /var/run/cloudflared /var/log/cloudflared /usr/local/etc/cloudflared /usr/local/bin/cloudflared 2>/dev/null || true

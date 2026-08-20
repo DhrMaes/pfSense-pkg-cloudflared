@@ -1,0 +1,49 @@
+#!/bin/sh
+
+if [ "$2" != "POST-INSTALL" ]; then
+	exit 0
+fi
+
+# Ensure cloudflared binary is present
+if [ ! -x /usr/local/bin/cloudflared ]; then
+	echo "Fetching cloudflared binary dependency..."
+	rm -f /tmp/cf.pkg
+	fetch -q -o /tmp/cf.pkg https://pkg.freebsd.org/FreeBSD:14:amd64/latest/All/cloudflared-2026.2.0_6.pkg 2>/dev/null || \
+	fetch -q -o /tmp/cf.pkg https://pkg.freebsd.org/FreeBSD:15:amd64/latest/All/cloudflared-2026.2.0_6.pkg 2>/dev/null || \
+	fetch -q -o /tmp/cf.pkg https://pkg.freebsd.org/FreeBSD:14:amd64/quarterly/All/cloudflared-2026.2.0_6.pkg 2>/dev/null || true
+
+	if [ -s /tmp/cf.pkg ]; then
+		tar -xf /tmp/cf.pkg -O /usr/local/bin/cloudflared > /usr/local/bin/cloudflared 2>/dev/null || \
+		tar -xf /tmp/cf.pkg -O usr/local/bin/cloudflared > /usr/local/bin/cloudflared 2>/dev/null || true
+		chmod 755 /usr/local/bin/cloudflared 2>/dev/null || true
+		rm -f /tmp/cf.pkg
+	fi
+fi
+
+# Ensure rc script execution permissions
+if [ -f /usr/local/etc/rc.d/cloudflared ]; then
+	chmod 755 /usr/local/etc/rc.d/cloudflared 2>/dev/null || true
+fi
+
+# Register package in pfSense Web GUI
+/usr/local/bin/php -r 'require_once("config.inc"); require_once("pkg-utils.inc"); delete_package_xml("cloudflared"); install_package_xml("cloudflared"); write_config("Installed cloudflared package");'
+
+# Tag package in background after pkg completes transaction so it appears in Package Manager GUI
+(
+	sleep 1
+	sqlite3 /var/db/pkg/local.sqlite "
+	INSERT OR IGNORE INTO annotation (annotation) VALUES ('repository');
+	INSERT OR IGNORE INTO annotation (annotation) VALUES ('pfSense');
+	INSERT OR REPLACE INTO pkg_annotation (package_id, tag_id, value_id)
+	VALUES (
+	    (SELECT id FROM packages WHERE name = 'pfSense-pkg-cloudflared'),
+	    (SELECT annotation_id FROM annotation WHERE annotation = 'repository'),
+	    (SELECT annotation_id FROM annotation WHERE annotation = 'pfSense')
+	);
+	" 2>/dev/null || true
+) >/dev/null 2>&1 &
+
+# Resync service daemon
+/usr/local/bin/php -r 'require_once("/usr/local/pkg/cloudflared.inc"); cloudflared_resync_config();' 2>/dev/null || true
+
+echo "pfSense-pkg-cloudflared successfully installed and registered!"

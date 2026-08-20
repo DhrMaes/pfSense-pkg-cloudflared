@@ -1,0 +1,5 @@
+pfSense package for Cloudflare Tunnel daemon (cloudflared).
+
+This package installs and manages cloudflared as a background service on pfSense,
+providing a web interface to configure tunnel connection tokens, log levels,
+and view live daemon status and logs.

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<pfsensepkgs>
+	<package>
+		<name>cloudflared</name>
+		<descr><![CDATA[Cloudflare Tunnel daemon (cloudflared)]]></descr>
+		<version>1.0.0</version>
+		<configurationfile>cloudflared.xml</configurationfile>
+	</package>
+</pfsensepkgs>

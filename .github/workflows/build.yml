@@ -1,0 +1,56 @@
+name: Build pfSense Package
+
+on:
+  push:
+    branches: 
+      - 'main'
+      - 'master'
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build FreeBSD package
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: '14.2'
+          usesh: true
+          envs: 'GITHUB_RUN_NUMBER GITHUB_REF_TYPE GITHUB_REF_NAME'
+          run: |
+            WORKSPACE="$(pwd)"
+            if [ "$GITHUB_REF_TYPE" = "tag" ] && [ -n "$GITHUB_REF_NAME" ]; then
+              RAW_TAG="$GITHUB_REF_NAME"
+              VERSION="$(echo "$RAW_TAG" | tr '-' '.')"
+            else
+              VERSION="0.0.${GITHUB_RUN_NUMBER:-1}"
+            fi
+            echo "Building package version: ${VERSION}"
+
+            mkdir -p /usr/ports/Mk
+            fetch -q -o /tmp/mk.tar.gz https://codeload.github.com/pfsense/FreeBSD-ports/tar.gz/refs/heads/devel
+            tar -xzf /tmp/mk.tar.gz -C /tmp/
+            cp -r /tmp/FreeBSD-ports-*/Mk/* /usr/ports/Mk/
+            mkdir -p /usr/ports/net/pfSense-pkg-cloudflared
+            cp -r net/pfSense-pkg-cloudflared/* /usr/ports/net/pfSense-pkg-cloudflared/
+            cd /usr/ports/net/pfSense-pkg-cloudflared
+            make ALLOW_UNSUPPORTED_SYSTEM=yes NO_DEPENDS=yes PORTVERSION="${VERSION}" stage create-manifest
+            sed -i '' 's/FreeBSD:[0-9]*:amd64/FreeBSD:*:*/g' work/.metadir.pfSense-pkg-cloudflared/+MANIFEST work/.metadir.pfSense-pkg-cloudflared/+COMPACT_MANIFEST 2>/dev/null || true
+            sed -i '' 's/FreeBSD:[0-9]*:[^"]*/FreeBSD:*:*/g' work/.metadir.pfSense-pkg-cloudflared/+MANIFEST work/.metadir.pfSense-pkg-cloudflared/+COMPACT_MANIFEST 2>/dev/null || true
+            pkg create -m work/.metadir.pfSense-pkg-cloudflared -p work/.PLIST.mktmp -r work/stage -o /tmp/
+            mkdir -p "$WORKSPACE/dist"
+            cp /tmp/pfSense-pkg-cloudflared-*.pkg "$WORKSPACE/dist/"
+            ls -la "$WORKSPACE/dist/"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pfSense-pkg-cloudflared
+          path: dist/*.pkg

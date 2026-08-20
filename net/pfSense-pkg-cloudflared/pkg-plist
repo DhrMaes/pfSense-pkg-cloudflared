@@ -1,0 +1,6 @@
+pkg/cloudflared.xml
+pkg/cloudflared.inc
+www/cloudflared_tunnels.php
+www/cloudflared_status.php
+etc/rc.d/cloudflared
+share/pfSense-pkg-cloudflared/info.xml

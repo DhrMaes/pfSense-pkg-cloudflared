@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE packagegui SYSTEM "../schema/pubpkg.dtd">
+<packagegui>
+	<name>cloudflared</name>
+	<title>Services: Cloudflare Tunnels</title>
+	<category>Services</category>
+	<version>1.0.0</version>
+	<include_file>/usr/local/pkg/cloudflared.inc</include_file>
+	<aftersaveredirect>cloudflared_tunnels.php</aftersaveredirect>
+	<menu>
+		<name>Cloudflare Tunnels</name>
+		<section>Services</section>
+		<url>cloudflared_tunnels.php</url>
+	</menu>
+	<menu>
+		<name>Cloudflare Tunnels</name>
+		<section>Status</section>
+		<url>cloudflared_status.php</url>
+	</menu>
+	<service>
+		<name>cloudflared</name>
+		<rcfile>cloudflared</rcfile>
+		<executable>cloudflared</executable>
+		<description>Cloudflare Tunnel Daemon</description>
+	</service>
+	<tabs>
+		<tab>
+			<text>Tunnels</text>
+			<url>cloudflared_tunnels.php</url>
+			<active/>
+		</tab>
+		<tab>
+			<text>Status &amp; Logs</text>
+			<url>cloudflared_status.php</url>
+		</tab>
+	</tabs>
+	<fields>
+		<field>
+			<fielddescr>Enable Tunnel</fielddescr>
+			<fieldname>enable</fieldname>
+			<description>Enable this Cloudflare Tunnel instance.</description>
+			<type>checkbox</type>
+		</field>
+		<field>
+			<fielddescr>Tunnel Name</fielddescr>
+			<fieldname>name</fieldname>
+			<description>Enter a unique alphanumeric name for this tunnel (e.g. homelab, primary).</description>
+			<type>input</type>
+			<required/>
+		</field>
+		<field>
+			<fielddescr>Description</fielddescr>
+			<fieldname>descr</fieldname>
+			<description>Enter an optional description for this tunnel.</description>
+			<type>input</type>
+		</field>
+		<field>
+			<fielddescr>Tunnel Token</fielddescr>
+			<fieldname>tunnel_token</fieldname>
+			<description>
+				<![CDATA[
+				Paste the tunnel token provided in the Cloudflare Zero Trust dashboard.<br />
+				Navigate to <strong>Networks &gt; Tunnels</strong> in Cloudflare Zero Trust, create or select your tunnel, and copy the token string after <code>--token</code>.
+				]]>
+			</description>
+			<type>textarea</type>
+			<rows>4</rows>
+			<cols>60</cols>
+			<encoding>base64</encoding>
+			<required/>
+		</field>
+		<field>
+			<fielddescr>Protocol</fielddescr>
+			<fieldname>protocol</fieldname>
+			<description>Select the edge connection transport protocol (QUIC is recommended).</description>
+			<type>select</type>
+			<default_value>auto</default_value>
+			<options>
+				<option><name>Auto (Default: QUIC with fallback)</name><value>auto</value></option>
+				<option><name>QUIC (HTTP/3 over UDP)</name><value>quic</value></option>
+				<option><name>HTTP/2 (TCP)</name><value>http2</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Log Level</fielddescr>
+			<fieldname>log_level</fieldname>
+			<description>Select logging verbosity.</description>
+			<type>select</type>
+			<default_value>info</default_value>
+			<options>
+				<option><name>Debug</name><value>debug</value></option>
+				<option><name>Info (Default)</name><value>info</value></option>
+				<option><name>Warn</name><value>warn</value></option>
+				<option><name>Error</name><value>error</value></option>
+				<option><name>Fatal</name><value>fatal</value></option>
+			</options>
+		</field>
+		<field>
+			<fielddescr>Metrics Address</fielddescr>
+			<fieldname>metrics_address</fieldname>
+			<description>Optional IP:Port address to expose Prometheus metrics (e.g. 127.0.0.1:2000). Leave empty to disable.</description>
+			<type>input</type>
+		</field>
+		<field>
+			<fielddescr>Extra Arguments</fielddescr>
+			<fieldname>extra_args</fieldname>
+			<description>Optional additional CLI arguments passed to cloudflared tunnel run (e.g. --edge-ip-version 4).</description>
+			<type>input</type>
+		</field>
+	</fields>
+	<custom_php_resync_config_command>
+		cloudflared_resync_config();
+	</custom_php_resync_config_command>
+	<custom_php_validation_command>
+		cloudflared_validate_input($_POST, $input_errors);
+	</custom_php_validation_command>
+</packagegui>

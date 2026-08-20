@@ -1,0 +1,14 @@
+# FreeBSD Port build artifacts
+work/
+*.txz
+*.tar.gz
+*.orig
+*.rej
+.DS_Store
+
+# Local build output
+dist/
+
+# Environment credentials
+.env
+*.env
